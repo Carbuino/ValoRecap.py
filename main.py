@@ -5,7 +5,7 @@ from discord.ext import commands
 from matchResults.check_recent_matchs import checkRecentMatches
 
 def main():
-    bot = commands.Bot(debug_guilds=[554515721170714634, 433369993346809877])
+    bot = commands.Bot(debug_guilds=[])
     valo_api.set_api_key('<YOUR_API_KEY_HERE>')
     
     @bot.event
