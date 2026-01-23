@@ -1,0 +1,2 @@
+py-cord==2.6.1
+valo_api[async]==2.0.8
