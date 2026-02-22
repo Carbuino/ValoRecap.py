@@ -348,20 +348,19 @@ def generateStandardImage(matchData: MatchHistoryPointV3, puuid: str):
         teamPlayerData = matchInfo['playerData'][team]
 
         results = generateResultBox(roundsWon=matchInfo['roundsWon'][team], color=color, inverted=inverted)
-        mvp = generateMVPBox(playerData=teamPlayerData[0], color=color, inverted=inverted)
-        p2 = generatePlayerBox(playerData=teamPlayerData[1], color=color, inverted=inverted)
-        p3 = generatePlayerBox(playerData=teamPlayerData[2], color=color, inverted=inverted)
-        p4 = generatePlayerBox(playerData=teamPlayerData[3], color=color, inverted=inverted)
-        p5 = generatePlayerBox(playerData=teamPlayerData[4], color=color, inverted=inverted)
+        box.alpha_composite(results)
 
         xPlayer = getFixedCoords(486, 306, 792, inverted)
-        box.alpha_composite(p2, (xPlayer, 497))
-        box.alpha_composite(p3, (xPlayer, 620))
-        box.alpha_composite(p4, (xPlayer, 743))
-        box.alpha_composite(p5, (xPlayer, 866))
+        yPlayer = 497
+        for i in range(len(teamPlayerData)):
+            if i == 0:
+                mvp = generateMVPBox(playerData=teamPlayerData[0], color=color, inverted=inverted)
+                box.alpha_composite(mvp, (0, 164))
 
-        box.alpha_composite(results)
-        box.alpha_composite(mvp, (0, 164))
+            else:
+                player = generatePlayerBox(playerData=teamPlayerData[i], color=color, inverted=inverted)
+                box.alpha_composite(player, (xPlayer, yPlayer))
+                yPlayer += 123
 
         xSide = getFixedCoords(296, 0, 792, inverted)
         box.alpha_composite(sideBox, (xSide, 497))
@@ -370,45 +369,45 @@ def generateStandardImage(matchData: MatchHistoryPointV3, puuid: str):
     def parseStandardMatchData(matchData: MatchHistoryPointV3, puuid: str):
         playerTeam = 'nil'
         otherTeam = 'nil'
-        roundsPlayed = len(matchData.rounds)
+        roundsPlayed = matchData.metadata.rounds_played
         roundsResult = {'red': 0, 'blue': 0}
         teamPlayerData = {'red': list(), 'blue': list()}
         gamemode = matchData.metadata.mode.upper()
         gameMap = matchData.metadata.map.upper()
 
-        loopTeam = 'red'
-        for i in range(10):
-            if i < 5:
-                loopTeam = 'red'
-                x = i
-            else:
-                loopTeam = 'blue'
-                x = i - 5
+        for i in range(len(matchData.players.red)):
+            player = matchData.players.red[i]
+            stat = player.stats
+            teamPlayerData['red'].append({'name': player.name.upper(),
+                                    'acs': (stat.score // roundsPlayed), 
+                                    'kills': stat.kills, 
+                                    'deaths': stat.deaths, 
+                                    'assists': stat.assists, 
+                                    'hs': stat.headshots, 
+                                    'agent': player.character.upper(),
+                                    'icon': player.assets.agent.small, 
+                                    'bust': player.assets.agent.bust})
+            
+            if (player.puuid == puuid) & (playerTeam == 'nil'):
+                playerTeam = 'red'
+                otherTeam = 'blue'
 
-            try:
-                player = getattr(matchData.players, loopTeam)[x]
-                stat = player.stats
-                teamPlayerData[loopTeam].append({'name': player.name.upper(),
-                                        'acs': (stat.score // roundsPlayed), 
-                                        'kills': stat.kills, 
-                                        'deaths': stat.deaths, 
-                                        'assists': stat.assists, 
-                                        'hs': stat.headshots, 
-                                        'agent': player.character.upper(),
-                                        'icon': player.assets.agent.small, 
-                                        'bust': player.assets.agent.bust})
+        if (playerTeam == 'nil'):
+                playerTeam = 'blue'
+                otherTeam = 'red'
 
-            except:
-                teamPlayerData[loopTeam].append({'name': ''})
-
-            if i < 5:
-                if player.puuid == puuid:
-                    playerTeam = 'red'
-                    otherTeam = 'blue'
-        
-        if playerTeam == 'nil':
-            playerTeam = 'blue'
-            otherTeam = 'red'
+        for i in range(len(matchData.players.blue)):
+            player = matchData.players.blue[i]
+            stat = player.stats
+            teamPlayerData['blue'].append({'name': player.name.upper(),
+                                    'acs': (stat.score // roundsPlayed), 
+                                    'kills': stat.kills, 
+                                    'deaths': stat.deaths, 
+                                    'assists': stat.assists, 
+                                    'hs': stat.headshots, 
+                                    'agent': player.character.upper(),
+                                    'icon': player.assets.agent.small, 
+                                    'bust': player.assets.agent.bust})
 
         teamPlayerData['red'] = sorted(teamPlayerData['red'], key=lambda x: (x['acs'], x['kills'], x['deaths']), reverse=True) 
         teamPlayerData['blue'] = sorted(teamPlayerData['blue'], key=lambda x: (x['acs'], x['kills'], x['deaths']), reverse=True)
@@ -503,6 +502,6 @@ def genMessage(match_id: str, puuid: str):
             matchData.metadata.mode = 'Deathmatch (Custom)'
             return generateDeathmatchEmbed(matchData, puuid), None
         else:
-            return generateStandardImage(matchData, puuid)
+            return None, generateStandardImage(matchData, puuid)
     else: 
         return None, generateStandardImage(matchData, puuid)
