@@ -338,9 +338,9 @@ def generateStandardImage(matchData: MatchHistoryPointV3, puuid: str):
         else:
             otherTeam = 'red'
 
-        if matchInfo['roundsWon'][team] > matchInfo['roundsWon'][otherTeam]:
+        if matchInfo['winningTeam'] == team:
             color = GREEN
-        elif matchInfo['roundsWon'][team] < matchInfo['roundsWon'][otherTeam]:
+        elif matchInfo['winningTeam'] == otherTeam:
             color = RED
         else:
             color = GREY
@@ -415,7 +415,14 @@ def generateStandardImage(matchData: MatchHistoryPointV3, puuid: str):
         roundsResult[playerTeam] = getattr(matchData.teams, playerTeam).rounds_won
         roundsResult[otherTeam] = getattr(matchData.teams, otherTeam).rounds_won
 
-        return {'playerTeam': playerTeam, 'playerData': teamPlayerData, 'roundsWon': {playerTeam: roundsResult[playerTeam], otherTeam: roundsResult[otherTeam]}, 'gamemode': gamemode, 'map': gameMap}
+        if getattr(matchData.teams, playerTeam).has_won == True:
+            winningTeam = playerTeam
+        elif getattr(matchData.teams, otherTeam).has_won == True:
+            winningTeam = otherTeam
+        else:
+            winningTeam = 'draw'
+
+        return {'playerTeam': playerTeam, 'playerData': teamPlayerData, 'roundsWon': {playerTeam: roundsResult[playerTeam], otherTeam: roundsResult[otherTeam]}, 'winningTeam': winningTeam, 'gamemode': gamemode, 'map': gameMap}
 
     matchInfo = parseStandardMatchData(matchData, puuid)
     canvas = Image.open('./assets/match_results_bg.jpg')
